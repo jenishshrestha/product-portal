@@ -7,7 +7,7 @@
     "dev": "concurrently -n app,sb -c blue,magenta \"vite\" \"storybook dev -p 6006 --no-open\"",
     "dev:app": "vite",
     "dev:storybook": "storybook dev -p 6006 --no-open",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "type-check": "tsc -b --noEmit",
     "lint": "biome check .",
