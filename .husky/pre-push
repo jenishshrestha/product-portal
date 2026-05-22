@@ -1,0 +1,17 @@
+echo "🧼 Type-check (tsc --noEmit)..."
+# Fast check before running tests
+bun run type-check || exit 1
+
+echo "🧹 Lint (biome)..."
+# Catches unused imports, format drift, and the repo's suspicious / style /
+# correctness rules. Formatting is auto-fixable; lint errors aren't.
+bun run lint || exit 1
+
+echo "🧪 Running tests..."
+# `--run` forces single-run mode; without it, Vitest enters watch mode when a
+# TTY is attached (which git hooks inherit) and hangs the push indefinitely.
+bun run test --run || exit 1
+
+echo "🏗️  Running production build..."
+# Ensures the application builds successfully before pushing
+bun run build || exit 1

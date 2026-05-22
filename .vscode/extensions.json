@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "formulahendry.auto-rename-tag",
+    "aaron-bond.better-comments",
+    "streetsidesoftware.code-spell-checker",
+    "dsznajder.es7-react-js-snippets",
+    "dbaeumer.vscode-eslint",
+    "solomonkinard.git-blame",
+    "mhutchie.git-graph",
+    "ecmel.vscode-html-css",
+    "ms-vscode.vscode-typescript-next",
+    "orta.vscode-jest",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "vscode-icons-team.vscode-icons"
+  ]
+}
