@@ -134,6 +134,7 @@ export interface ExamSpecificRequirement {
 export interface CountrySpecificRequirement {
   country_code?: string;
   country_name?: string | null;
+  requirements?: string | null;
   generic_requirements?: string | null;
   exam_specific_requirements?: ExamSpecificRequirement[];
 }

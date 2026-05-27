@@ -3,6 +3,7 @@ import { DollarSignIcon, ExternalLinkIcon, InfoIcon } from "lucide-react";
 import { toArray } from "../../lib/product-format";
 import type { FeeEntry, Product } from "../../types/product.types";
 import { DetailCard } from "./DetailCard";
+import { StructuredText } from "./StructuredText";
 
 interface ProductFeesTabProps {
   product: Product;
@@ -40,7 +41,7 @@ export function ProductFeesTab({ product }: ProductFeesTabProps) {
                   Fee type
                 </th>
                 <th className="border-b border-border-subtle bg-muted px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">
-                  Cadence
+                  Frequency
                 </th>
                 <th className="border-b border-border-subtle bg-muted px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">
                   Audience
@@ -93,9 +94,7 @@ export function ProductFeesTab({ product }: ProductFeesTabProps) {
 
       {feeNotes && (
         <DetailCard title="Fee notes" icon={InfoIcon}>
-          <p className="whitespace-pre-wrap text-[0.8125rem] leading-[1.6] text-foreground text-pretty">
-            {feeNotes}
-          </p>
+          <StructuredText text={feeNotes} />
         </DetailCard>
       )}
 

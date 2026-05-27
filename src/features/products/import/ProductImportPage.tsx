@@ -9,7 +9,7 @@ import { ImportDropzone } from "./components/ImportDropzone";
 import { ImportPreview } from "./components/ImportPreview";
 import { ImportProgress as ImportProgressView } from "./components/ImportProgress";
 import { ImportResults } from "./components/ImportResults";
-import { ImportParseError, parseImportFile } from "./lib/parse";
+import { ImportParseError, parseImportFile, parseSingleCourseFile } from "./lib/parse";
 import type { ImportProgress, WizardState } from "./types";
 
 const INITIAL: WizardState = { kind: "idle" };
@@ -21,8 +21,15 @@ const INITIAL: WizardState = { kind: "idle" };
  */
 export function ProductImportPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"bulk" | "single">("bulk");
   const [state, setState] = useState<WizardState>(INITIAL);
   const [parseError, setParseError] = useState<string | undefined>();
+
+  function switchMode(next: "bulk" | "single") {
+    setState(INITIAL);
+    setParseError(undefined);
+    setMode(next);
+  }
 
   async function onFile(file: File) {
     setParseError(undefined);
@@ -36,7 +43,8 @@ export function ProductImportPage() {
       return;
     }
     try {
-      const { records, preview } = parseImportFile(text);
+      const { records, preview } =
+        mode === "single" ? parseSingleCourseFile(text) : parseImportFile(text);
       setState({
         kind: "parsed",
         file: { name: file.name, size: file.size },
@@ -110,12 +118,32 @@ export function ProductImportPage() {
     <div className="space-y-6">
       <BackLink to="/products">Back to products</BackLink>
 
+      <div className="flex gap-1 rounded-lg border border-border bg-muted p-1 w-fit">
+        {(["bulk", "single"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => switchMode(m)}
+            className={
+              mode === m
+                ? "rounded-md bg-background px-4 py-1.5 text-sm font-medium shadow-sm"
+                : "rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+            }
+          >
+            {m === "bulk" ? "Bulk Import" : "Single Course"}
+          </button>
+        ))}
+      </div>
+
       <PageHeader.Root>
         <PageHeader.Content>
-          <PageHeader.Title>Bulk Import</PageHeader.Title>
+          <PageHeader.Title>
+            {mode === "bulk" ? "Bulk Import" : "Single Course Import"}
+          </PageHeader.Title>
           <PageHeader.Description>
-            Upload a JSON file of v19-shaped product records. New combinations are inserted;
-            existing institution + course pairs are updated.
+            {mode === "bulk"
+              ? "Upload a JSON file of v19-shaped product records. New combinations are inserted; existing institution + course pairs are updated."
+              : "Upload a single v19 course JSON file. The top-level object is imported as one course."}
           </PageHeader.Description>
         </PageHeader.Content>
       </PageHeader.Root>
