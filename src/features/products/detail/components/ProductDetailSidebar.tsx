@@ -15,15 +15,13 @@ import {
   nextIntake,
   primaryCity,
   primaryCountry,
-  primaryDuration,
-  primaryDurationMode,
   primaryFee,
   primaryInstitution,
   primaryQualification,
   primaryStudyLevel,
   toArray,
 } from "../../lib/product-format";
-import type { InstitutionCode, Product } from "../../types/product.types";
+import type { CourseDuration, InstitutionCode, Product } from "../../types/product.types";
 import { DetailCard } from "./DetailCard";
 
 interface ProductDetailSidebarProps {
@@ -61,10 +59,10 @@ export const ProductDetailSidebar = memo(function ProductDetailSidebar({
   const website = safeExternalUrl(product.institution_details?.institution_website);
   const studyLevel = primaryStudyLevel(product);
   const qualification = primaryQualification(product);
-  const duration = primaryDuration(product);
-  const durationMode = primaryDurationMode(product);
+  const courseDurations = toArray<CourseDuration>(product.course_details?.course_durations ?? []);
   const intake = nextIntake(product);
   const tuition = primaryFee(product);
+  const tuitionFrequency = product.fees_and_funding?.fees?.[0]?.frequency ?? null;
   const acceptsIntl = product.course_details?.available_for_international_students;
   const discipline = product.course_details?.discipline_type;
   const pgwp = product.course_details?.pgwp_alignment;
@@ -73,9 +71,6 @@ export const ProductDetailSidebar = memo(function ProductDetailSidebar({
   const instCodes = toArray<InstitutionCode>(
     product.institution_details?.institution_identifiers?.codes,
   );
-
-  const durationLabel =
-    duration === "—" ? duration : durationMode ? `${duration} · ${durationMode}` : duration;
 
   return (
     <div className="flex flex-col gap-4">
@@ -139,10 +134,28 @@ export const ProductDetailSidebar = memo(function ProductDetailSidebar({
           <KvRow label="Qualification" valueClassName="text-xs">
             {qualification !== "—" ? qualification : "—"}
           </KvRow>
-          <KvRow label="Duration">{durationLabel !== "—" ? durationLabel : "—"}</KvRow>
+          <KvRow label="Duration">
+            {courseDurations.length === 0 ? (
+              "—"
+            ) : (
+              <div className="flex flex-col gap-1 text-right">
+                {courseDurations.map((d, i) => {
+                  const dur = d.value && d.unit ? `${d.value} ${d.unit.toLowerCase()}` : null;
+                  const label = dur
+                    ? d.study_mode
+                      ? `${dur} · ${d.study_mode}`
+                      : dur
+                    : (d.study_mode ?? "—");
+                  return <span key={i}>{label}</span>;
+                })}
+              </div>
+            )}
+          </KvRow>
           {intake && <KvRow label="Next intake">{intake}</KvRow>}
-          <KvRow label="Tuition">{tuition}</KvRow>
-          <KvRow label="Accepts intl.">
+          <KvRow label="Tuition">
+            {tuitionFrequency ? `${tuition} · ${tuitionFrequency}` : tuition}
+          </KvRow>
+          <KvRow label="Accepts international students">
             <InternationalBadge value={acceptsIntl} />
           </KvRow>
         </dl>

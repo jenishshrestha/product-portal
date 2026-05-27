@@ -30,6 +30,35 @@ export interface ParseResult {
 
 const MAX_PREVIEW_ROWS = 5;
 
+export function parseSingleCourseFile(text: string): ParseResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "Invalid JSON";
+    throw new ImportParseError(`Couldn't parse the file as JSON: ${detail}`);
+  }
+
+  if (Array.isArray(parsed)) {
+    throw new ImportParseError(
+      "Expected a single product object, not an array. Use Bulk Import to upload multiple courses at once.",
+    );
+  }
+  if ("products" in (parsed as object)) {
+    throw new ImportParseError(
+      "Expected a single product object, not a { products: [...] } envelope. Use Bulk Import instead.",
+    );
+  }
+  if (!parsed || typeof parsed !== "object") {
+    throw new ImportParseError("Expected a single product object.");
+  }
+
+  return {
+    records: [parsed],
+    preview: [toPreviewRow(parsed, 0)],
+  };
+}
+
 export function parseImportFile(text: string): ParseResult {
   let parsed: unknown;
   try {

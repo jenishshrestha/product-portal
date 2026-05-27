@@ -61,6 +61,10 @@ export function ProductListingPage() {
         defaultPageSize: 10,
         pageSizeOptions: [10, 20, 30, 50],
       },
+      advancedFilters: {
+        sections: [],
+        getOptions: async () => ({}),
+      },
       enableSorting: true,
       enableRowSelection: true,
       syncWithUrl: true,

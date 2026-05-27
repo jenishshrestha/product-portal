@@ -117,7 +117,7 @@ export const ProductDetailHeader = memo(function ProductDetailHeader({
         {publicUrl && (
           <a href={publicUrl} target="_blank" rel="noopener noreferrer" className={ACTION_OUTLINE}>
             <ExternalLinkIcon className="size-3.5" />
-            View public page
+            View Course page
           </a>
         )}
         {isSuperadmin && (

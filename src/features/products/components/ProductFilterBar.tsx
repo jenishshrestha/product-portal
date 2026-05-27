@@ -20,7 +20,7 @@ import {
 } from "@shared/lib/data-table";
 import { cn } from "@shared/lib/utils";
 import { SearchIcon, XIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useCountries, useFilterOptions } from "../api/useProducts";
 import { STATUS_LABELS } from "../lib/product-format";
 import { type Country, PRODUCT_STATUSES, type ProductStatus } from "../types/product.types";
@@ -34,16 +34,15 @@ const ENGLISH_TEST_OPTIONS = [
   { label: "Duolingo", value: "Duolingo" },
 ] as const;
 
-const CURRENCY_OPTIONS = ["AUD", "CAD", "GBP", "NZD", "USD", "NPR"] as const;
+const CURRENCY_OPTIONS = ["AUD", "CAD", "GBP", "NZD", "USD"] as const;
 
 const CURRENCY_CONFIG: Record<string, { max: number; step: number }> = {
-  AUD: { max: 300_000, step: 5_000 },
-  CAD: { max: 300_000, step: 5_000 },
-  GBP: { max: 100_000, step: 1_000 },
-  NZD: { max: 300_000, step: 5_000 },
-  USD: { max: 3_000_000, step: 50_000 },
-  NPR: { max: 3_000_000, step: 50_000 },
-  "": { max: 3_000_000, step: 50_000 },
+  AUD: { max: 1_000_000, step: 10_000 },
+  CAD: { max: 1_000_000, step: 10_000 },
+  GBP: { max: 1_000_000, step: 10_000 },
+  NZD: { max: 1_000_000, step: 10_000 },
+  USD: { max: 1_000_000, step: 10_000 },
+  "": { max: 1_000_000, step: 10_000 },
 };
 
 const STATUS_OPTIONS = PRODUCT_STATUSES.map((value) => ({
@@ -93,14 +92,16 @@ export function ProductFilterBar() {
 
   function handleFeeChange(values: number[]) {
     const [min, max] = values;
-    advanced.setSection("feesMin", (min ?? 0) > 0 ? [String(min)] : []);
-    advanced.setSection("feesMax", (max ?? feeConfigMax) < feeConfigMax ? [String(max)] : []);
+    const { feesMin: _min, feesMax: _max, ...rest } = advanced.filters;
+    const next: Record<string, string[]> = { ...rest };
+    if ((min ?? 0) > 0) next.feesMin = [String(min)];
+    if ((max ?? feeConfigMax) < feeConfigMax) next.feesMax = [String(max)];
+    advanced.setFilters(next);
   }
 
   function handleCurrencyChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    advanced.setSection("feesCurrency", e.target.value ? [e.target.value] : []);
-    advanced.setSection("feesMin", []);
-    advanced.setSection("feesMax", []);
+    const { feesMin: _min, feesMax: _max, feesCurrency: _curr, ...rest } = advanced.filters;
+    advanced.setFilters(e.target.value ? { ...rest, feesCurrency: [e.target.value] } : rest);
   }
 
   const hasInstitution = (advanced.filters.institution?.length ?? 0) > 0;
@@ -230,8 +231,8 @@ export function ProductFilterBar() {
                 <button
                   type="button"
                   onClick={() => {
-                    advanced.setSection("feesMin", []);
-                    advanced.setSection("feesMax", []);
+                    const { feesMin: _min, feesMax: _max, ...rest } = advanced.filters;
+                    advanced.setFilters(rest);
                   }}
                   className="text-muted-foreground transition-colors hover:text-foreground"
                   aria-label="Reset fee range"
@@ -377,8 +378,19 @@ function MultiCombobox({
   placeholder?: string;
 }) {
   const anchor = useComboboxAnchor();
+  const [inputValue, setInputValue] = useState("");
+  const filtered = inputValue
+    ? options.filter((o) => o.toLowerCase().includes(inputValue.toLowerCase()))
+    : options;
   return (
-    <Combobox value={selected} onValueChange={onSelectedChange} multiple>
+    <Combobox
+      value={selected}
+      onValueChange={(v) => {
+        onSelectedChange(v);
+        setInputValue("");
+      }}
+      multiple
+    >
       <ComboboxChips ref={anchor}>
         {selected.map((v) => (
           <ComboboxChip key={v}>{v}</ComboboxChip>
@@ -386,12 +398,13 @@ function MultiCombobox({
         <ComboboxChipsInput
           placeholder={selected.length === 0 ? placeholder : ""}
           className="min-w-[80px]"
+          onChange={(e) => setInputValue(e.target.value)}
         />
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
         <ComboboxList>
           <ComboboxEmpty>No results.</ComboboxEmpty>
-          {options.map((o) => (
+          {filtered.map((o) => (
             <ComboboxItem key={o} value={o}>
               {o}
             </ComboboxItem>
@@ -413,6 +426,7 @@ function CountryCombobox({
   onSelectedChange: (v: string[]) => void;
 }) {
   const anchor = useComboboxAnchor();
+  const [inputValue, setInputValue] = useState("");
 
   const nameToCode = useMemo(() => {
     const map = new Map<string, string>();
@@ -420,8 +434,19 @@ function CountryCombobox({
     return map;
   }, [countries]);
 
+  const filtered = inputValue
+    ? countries.filter((c) => c.name.toLowerCase().includes(inputValue.toLowerCase()))
+    : countries;
+
   return (
-    <Combobox value={selected} onValueChange={onSelectedChange} multiple>
+    <Combobox
+      value={selected}
+      onValueChange={(v) => {
+        onSelectedChange(v);
+        setInputValue("");
+      }}
+      multiple
+    >
       <ComboboxChips ref={anchor}>
         {selected.map((name) => {
           const code = nameToCode.get(name);
@@ -440,12 +465,13 @@ function CountryCombobox({
         <ComboboxChipsInput
           placeholder={selected.length === 0 ? "Search countries…" : ""}
           className="min-w-[80px]"
+          onChange={(e) => setInputValue(e.target.value)}
         />
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
         <ComboboxList>
           <ComboboxEmpty>No results.</ComboboxEmpty>
-          {countries.map((c) => (
+          {filtered.map((c) => (
             <ComboboxItem key={c.code} value={c.name}>
               <span aria-hidden>{countryFlag(c.code)}</span>
               {c.name}

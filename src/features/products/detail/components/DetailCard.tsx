@@ -5,8 +5,8 @@ interface DetailCardProps {
   title: string;
   /** Optional leading icon from `lucide-react` — sized 16px to match design. */
   icon?: ComponentType<{ className?: string }>;
-  /** Optional subtitle rendered in the header's right slot. */
-  subtitle?: string;
+  /** Optional subtitle rendered in the header's left slot, after the title. */
+  subtitle?: ReactNode;
   /** Optional action slot (buttons, toggles) rendered far-right in header. */
   action?: ReactNode;
   /** Drop header-body border + body padding. Used by tables that own their own grid. */
@@ -39,7 +39,12 @@ export function DetailCard({
         <div className="flex min-w-0 items-center gap-2.5">
           {Icon && <Icon className="size-4 text-muted-foreground" />}
           <h3 className="text-sm font-medium tracking-[-0.005em] text-foreground">{title}</h3>
-          {subtitle && <span className="text-xs text-muted-foreground">{subtitle}</span>}
+          {subtitle &&
+            (typeof subtitle === "string" ? (
+              <span className="text-xs text-muted-foreground">{subtitle}</span>
+            ) : (
+              <>{subtitle}</>
+            ))}
         </div>
         {action && <div className="flex items-center gap-2">{action}</div>}
       </header>

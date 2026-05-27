@@ -25,6 +25,7 @@ import type {
   StandardizedTestRequirement,
 } from "../../types/product.types";
 import { DetailCard } from "./DetailCard";
+import { StructuredText } from "./StructuredText";
 
 interface ProductAdmissionsTabProps {
   product: Product;
@@ -99,20 +100,24 @@ export function ProductAdmissionsTab({ product }: ProductAdmissionsTabProps) {
         <DetailCard
           title="English language requirements"
           icon={GlobeIcon}
-          subtitle={`${exams.length} test${exams.length === 1 ? "" : "s"}`}
-          action={
-            exams.length > 1 ? (
-              <FilterDropdown
-                label="Exam"
-                icon={<GlobeIcon className="size-3.5" />}
-                options={examOptions}
-                selected={selectedExam.test_name ? [selectedExam.test_name] : []}
-                onSelectedChange={(values) => setActiveExam(values[0] ?? firstExamName)}
-                multiple={false}
-                searchable={exams.length > 6}
-                searchPlaceholder="Search exams..."
-              />
-            ) : null
+          subtitle={
+            <>
+              <span className="text-xs text-muted-foreground">
+                {exams.length} test{exams.length === 1 ? "" : "s"}
+              </span>
+              {exams.length > 1 && (
+                <FilterDropdown
+                  label="Exam"
+                  icon={<GlobeIcon className="size-3.5" />}
+                  options={examOptions}
+                  selected={selectedExam.test_name ? [selectedExam.test_name] : []}
+                  onSelectedChange={(values) => setActiveExam(values[0] ?? firstExamName)}
+                  multiple={false}
+                  searchable={exams.length > 6}
+                  searchPlaceholder="Search exams..."
+                />
+              )}
+            </>
           }
         >
           <ScoreGrid testName={selectedExam.test_name ?? ""} scores={selectedExam.scores ?? {}} />
@@ -212,9 +217,7 @@ export function ProductAdmissionsTab({ product }: ProductAdmissionsTabProps) {
 
       {admissionNotes && (
         <DetailCard title="Admission notes" icon={InfoIcon}>
-          <p className="text-[0.8125rem] leading-[1.6] text-foreground text-pretty whitespace-pre-wrap">
-            {admissionNotes}
-          </p>
+          <StructuredText text={admissionNotes} />
         </DetailCard>
       )}
 
@@ -231,13 +234,25 @@ export function ProductAdmissionsTab({ product }: ProductAdmissionsTabProps) {
 
 // ---- Academic requirements ----
 
+function hasRequirementText(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const normalized = text.trim().toLowerCase().replace(/\.$/, "").trim();
+  return normalized !== "not specified" && normalized !== "requirements not specified";
+}
+
 function AcademicRequirementsCard({
   academic,
 }: {
   academic: NonNullable<Product["admissions_requirements"]>["academic_requirements"];
 }) {
-  const countryRoutes = toArray<CountrySpecificRequirement>(
-    academic?.country_specific_requirements,
+  const allRoutes = toArray<CountrySpecificRequirement>(academic?.country_specific_requirements);
+  // Only show countries that have meaningful requirement text (exclude null, empty, "not specified").
+  const countryRoutes = useMemo(
+    () =>
+      allRoutes.filter(
+        (r) => hasRequirementText(r.requirements) || hasRequirementText(r.generic_requirements),
+      ),
+    [allRoutes],
   );
 
   // Stable lookup so the combobox + selected-route renderers don't
@@ -271,29 +286,26 @@ function AcademicRequirementsCard({
       title="Academic requirements"
       icon={GraduationCapIcon}
       subtitle={
-        countryRoutes.length > 0
-          ? `${countryRoutes.length} country route${countryRoutes.length === 1 ? "" : "s"}`
-          : undefined
-      }
-      action={
         countryRoutes.length > 0 ? (
-          <FilterDropdown
-            label="Filter by country"
-            icon={<MapPinIcon className="size-3.5" />}
-            options={options}
-            selected={selectedKeys}
-            onSelectedChange={setSelectedKeys}
-            searchable
-            searchPlaceholder="Search countries..."
-          />
-        ) : null
+          <>
+            <span className="text-xs text-muted-foreground">
+              (available for {countryRoutes.length}{" "}
+              {countryRoutes.length === 1 ? "country" : "countries"})
+            </span>
+            <FilterDropdown
+              label="Select a country"
+              icon={<MapPinIcon className="size-3.5" />}
+              options={options}
+              selected={selectedKeys}
+              onSelectedChange={setSelectedKeys}
+              searchable
+              searchPlaceholder="Search countries..."
+            />
+          </>
+        ) : undefined
       }
     >
-      {academic?.generic_requirements && (
-        <p className="text-sm leading-[1.6] text-foreground text-pretty whitespace-pre-wrap">
-          {academic.generic_requirements}
-        </p>
-      )}
+      {academic?.generic_requirements && <StructuredText text={academic.generic_requirements} />}
       {countryRoutes.length > 0 && (
         <>
           {academic?.generic_requirements && <div className="my-4 h-px bg-border-subtle" />}
@@ -327,9 +339,9 @@ function CountryRouteCard({ route }: { route: CountrySpecificRequirement }) {
         )}
         <span className="text-[0.8125rem] font-medium">{label}</span>
       </div>
-      {route.generic_requirements && (
+      {(route.requirements || route.generic_requirements) && (
         <p className="text-[0.8125rem] leading-[1.6] text-foreground text-pretty whitespace-pre-wrap">
-          {route.generic_requirements}
+          {route.requirements ?? route.generic_requirements}
         </p>
       )}
       {exams.length > 0 && (
@@ -415,8 +427,8 @@ function PrereqRow({ label, value }: { label: string; value: string }) {
         <ClockIcon className="size-3" />
         {label}
       </dt>
-      <dd className="m-0 whitespace-pre-wrap text-[0.8125rem] leading-[1.6] text-foreground">
-        {value}
+      <dd className="m-0">
+        <StructuredText text={value} />
       </dd>
     </div>
   );
